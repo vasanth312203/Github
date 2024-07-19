@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub User Info</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        #result img {
+            max-width: 150px;
+            border-radius: 50%;
+        }
+        #result {
+            margin-top: 20px;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            padding: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-5">GitHub User Info</h1>
+        <form id="userForm" class="form-inline my-4">
+            <input type="text" id="text" class="form-control mr-2" placeholder="Enter GitHub URL" required>
+            <button type="submit" class="btn btn-primary">Get Info</button>
+        </form>
+        <div id="result" class="mt-4"></div>
+    </div>
+    <script>
+        document.getElementById('userForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            git();
+        });
+
+        function git() {
+            var url = document.getElementById("text").value;
+            var username = url.split("https://github.com/")[1];
+            
+            if (!username) {
+                document.getElementById("result").innerHTML = `
+                    <div class="alert alert-danger" role="alert">
+                        Invalid URL. Please enter a valid GitHub URL.
+                    </div>`;
+                return;
+            }
+
+            console.log(username);
+            fetch("https://api.github.com/users/" + username, {
+                headers: {
+                    'Authorization': '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'
+                }
+            })
+            .then((result) => result.json())
+            .then((data) => {
+                console.log(data);
+                document.getElementById("result").innerHTML = `
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <img src="${data.avatar_url}" alt="user_avatar">
+                            <h5 class="card-title mt-2">${data.name || 'No name available'}</h5>
+                            <p class="card-text">Public Repositories: ${data.public_repos}</p>
+                            <p class="card-text">Bio: ${data.bio || 'No bio available'}</p>
+                        </div>
+                    </div>`;
+                
+                fetch(data.repos_url, {
+                    headers: {
+                        'Authorization': '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'
+                    }
+                })
+                .then((result) => result.json())
+                .then((repos) => {
+                    console.log(repos);
+                    let repoList = '<div class="list-group">';
+                    repos.forEach(repo => {
+                        repoList += `
+                            <a href="${repo.html_url}" target="_blank" class="list-group-item list-group-item-action">
+                                ${repo.name}
+                            </a>`;
+                    });
+                    repoList += '</div>';
+                    document.getElementById("result").innerHTML += `
+                        <div class="mt-4">
+                            <h5>Repositories:</h5>
+                            ${repoList}
+                        </div>`;
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching the data:', error);
+                document.getElementById("result").innerHTML = `
+                    <div class="alert alert-danger" role="alert">
+                        Could not fetch data. Please try again.
+                    </div>`;
+            });
+        }
+    </script>
+</body>
+</html>
